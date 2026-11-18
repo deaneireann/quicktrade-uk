@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>QuickQuote UK - Quotes, Invoices & WhatsApp PDFs</title>
+  <!-- OPTIONAL VISITOR TRACKING: Paste your free Cloudflare Web Analytics or Google Analytics snippet right below this line -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --primary: #1e293b;
+      --accent: #f59e0b;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 16px; max-width: 600px; margin: 0 auto; padding-bottom: 48px; }
+    
+    /* Header & Top Bar */
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: var(--primary); color: #fff; padding: 14px 16px; border-radius: 10px; }
+    .header-left h1 { font-size: 19px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .header-sub { font-size: 11px; color: #cbd5e1; margin-top: 2px; }
+    .badge { background: var(--accent); color: #000; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+    .header-actions { display: flex; gap: 6px; }
+    .btn-header { background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 7px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-header.upgrade { background: var(--accent); color: #000; font-weight: 700; }
+
+    /* Free Quotes Counter Banner */
+    .usage-banner { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 10px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+    .usage-banner.low { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .usage-banner.limit { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+    
+    /* Cards & Inputs */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+    .card-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .field { margin-bottom: 12px; }
+    .field:last-child { margin-bottom: 0; }
+    label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+    input, textarea, select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; background: #fff; color: var(--text); }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--primary); }
+    .row { display: flex; gap: 10px; }
+    .col { flex: 1; }
+    
+    /* Mode Switch */
+    .mode-switch { display: flex; background: var(--border); border-radius: 8px; padding: 3px; margin-bottom: 14px; }
+    .mode-btn { flex: 1; text-align: center; padding: 8px; font-size: 14px; font-weight: 700; border-radius: 6px; border: none; background: transparent; color: var(--muted); cursor: pointer; }
+    .mode-btn.active { background: var(--card); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    
+    /* Line Items */
+    .item-row { border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px; position: relative; }
+    .item-row:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+    .remove-btn { background: var(--danger); color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; cursor: pointer; float: right; }
+    
+    /* Buttons */
+    .btn { display: inline-block; width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; text-align: center; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-secondary { background: #e2e8f0; color: var(--text); }
+    .btn-accent { background: var(--accent); color: #000; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-sm { padding: 5px 9px; font-size: 11px; width: auto; }
+    
+    /* Presets & Toggles */
+    .preset-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .chip { background: #f1f5f9; border: 1px solid var(--border); padding: 6px 10px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--primary); }
+    .chip:active { background: var(--primary); color: #fff; }
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+    input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary); }
+    
+    /* Totals Box */
+    .totals-box { background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-top: 12px; }
+    .total-line { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px; }
+    .total-line.grand { font-size: 18px; font-weight: 800; color: var(--primary); border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; margin-bottom: 0; }
+    
+    /* Status & Modals */
+    #voice-status { display: none; background: #fef3c7; color: #92400e; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 12px; text-align: center; border: 1px solid #f59e0b; }
+    .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); z-index: 1000; align-items: center; justify-content: center; padding: 16px; overflow-y: auto; }
+    .modal-box { background: #fff; width: 100%; max-width: 420px; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); }
+    .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; color: var(--primary); }
+    .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.4; }
+    .plan-card { border: 2px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .plan-card.selected { border-color: var(--accent); background: #fffbeb; }
+    .plan-price { font-size: 18px; font-weight: 800; color: var(--primary); }
+    .divider { border-top: 1px solid var(--border); margin: 14px 0; }
+    .preset-edit-row { display: flex; gap: 6px; margin-bottom: 8px; align-items: center; }
+
+    /* PIN Lock Screen */
+    #pin-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--primary); color: #fff; z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+    .pin-box { background: #fff; color: var(--text); width: 100%; max-width: 340px; border-radius: 12px; padding: 24px; text-align: center; }
+
+    /* Hidden Print Layout for PDF */
+    #print-area { display: none; background: #fff; color: #000; padding: 30px; font-family: Arial, sans-serif; }
+    .p-header { display: flex; justify-content: space-between; border-bottom: 2px solid #1e293b; padding-bottom: 16px; margin-bottom: 20px; }
+    .p-title { font-size: 26px; font-weight: bold; color: #1e293b; text-transform: uppercase; }
+    .p-biz { text-align: right; font-size: 12px; line-height: 1.5; }
+    .p-meta { display: flex; justify-content: space-between; margin-bottom: 24px; font-size: 13px; }
+    .p-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+    .p-table th { background: #1e293b; color: #fff; text-align: left; padding: 8px; }
+    .p-table td { border-bottom: 1px solid #cbd5e1; padding: 8px; }
+    .p-totals { width: 260px; margin-left: auto; font-size: 13px; }
+    .p-totals tr td { padding: 5px 0; }
+    .p-totals tr.p-grand td { font-weight: bold; font-size: 16px; border-top: 2px solid #1e293b; padding-top: 8px; }
+    .p-footer { margin-top: 30px; font-size: 12px; color: #475569; border-top: 1px solid #cbd5e1; padding-top: 12px; }
+  </style>
+</head>
+<body>
+
+  <!-- OPTIONAL 4-DIGIT PIN LOCK OVERLAY -->
+  <div id="pin-screen">
+    <div class="pin-box">
+      <div style="font-size:20px; font-weight:800; margin-bottom:6px; color:var(--primary);">🔒 QuickQuote Locked</div>
+      <div style="font-size:13px; color:var(--muted); margin-bottom:16px;">Enter your 4-digit PIN to view your business & customer details.</div>
+      <input type="password" id="pin-unlock-input" maxlength="4" inputmode="numeric" placeholder="••••" style="text-align:center; font-size:24px; letter-spacing:8px; margin-bottom:12px;">
+      <button class="btn btn-primary" onclick="checkPinUnlock()">Unlock App</button>
+    </div>
+  </div>
+
+  <!-- Top Navigation -->
+  <div class="header">
+    <div class="header-left">
+      <h1>QuickQuote <span class="badge" id="plan-badge">FREE</span></h1>
+      <div class="header-sub">UK Quotes, Invoices & WhatsApp PDFs</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-header upgrade" id="upgrade-nav-btn" onclick="openModal('upgrade-modal')">Upgrade</button>
+      <button class="btn-header" onclick="openPinModal()" title="Set 4-Digit App PIN">🔒 PIN</button>
+    </div>
+  </div>
+
+  <!-- 5-Quote Free Limit Status Bar -->
+  <div class="usage-banner" id="usage-banner">
+    <span id="usage-text">Free Trial: 5 PDF quotes/invoices included</span>
+    <span id="usage-count" style="font-weight:800;">5 of 5 left</span>
+  </div>
+
+  <!-- Document Type Switch -->
+  <div class="mode-switch">
+    <button class="mode-btn active" id="btn-quote" onclick="setDocType('QUOTE')">QUOTE</button>
+    <button class="mode-btn" id="btn-invoice" onclick="setDocType('INVOICE')">INVOICE</button>
+  </div>
+
+  <!-- Voice Input Bar -->
+  <div id="voice-status"></div>
+  <button class="btn btn-accent" style="margin-bottom: 14px;" onclick="startVoiceQuote()">🎤 Speak Quote Items</button>
+
+  <!-- Your Business Details -->
+  <div class="card">
+    <div class="card-title">
+      <span>Your Business Details</span>
+      <button class="btn btn-secondary btn-sm" onclick="saveProfile()">Save Defaults</button>
+    </div>
+    <div class="field">
+      <label>Business / Trading Name</label>
+      <input type="text" id="biz-name" placeholder="e.g. McMahon Removals & Fencing">
+    </div>
+    <div class="row">
+      <div class="col field">
+        <label>Phone / Email</label>
+        <input type="text" id="biz-contact" placeholder="07700 900000">
+      </div>
+      <div class="col field">
+        <label>VAT Number (Optional)</label>
+        <input type="text" id="biz-vat" placeholder="GB123456789">
+      </div>
+    </div>
+    <div class="field">
+      <label>Business Address</label>
+      <input type="text" id="biz-address" placeholder="Luton, Bedfordshire">
+    </div>
+    <div class="field">
+      <label>Your Bank Details (Shown on Customer Invoices)</label>
+      <input type="text" id="biz-bank" placeholder="Sort: 00-00-00 | Acc: 12345678">
+    </div>
+  </div>
+
+  <!-- Customer & Job Info -->
+  <div class="card">
+    <div class="card-title">
+      <span>Customer & Document Info</span>
+      <button class="btn btn-secondary btn-sm" onclick="resetCurrentDoc()">New / Clear</button>
+    </div>
+    <div class="row">
+      <div class="col field">
+        <label>Document #</label>
+        <input type="text" id="doc-num" value="QT-1001">
+      </div>
+      <div class="col field">
+        <label>Date</label>
+        <input type="date" id="doc-date">
+      </div>
+    </div>
+    <div class="field">
+      <label>Customer Name</label>
+      <input type="text" id="client-name" placeholder="John Smith">
+    </div>
+    <div class="field">
+      <label>Customer Address / Postcode</label>
+      <input type="text" id="client-address" placeholder="14 High Street, LU1 2AB">
+    </div>
+  </div>
+
+  <!-- Quick Presets & Line Items -->
+  <div class="card">
+    <div class="card-title">
+      <span>Materials & Labour</span>
+      <button class="btn btn-secondary btn-sm" onclick="openPresetEditor()">Edit Presets</button>
+    </div>
+    <div class="preset-chips" id="preset-chips-container"></div>
+    
+    <div id="items-container"></div>
+    
+    <button class="btn btn-secondary" style="margin-top: 10px;" onclick="addItem()">+ Add Custom Line Item</button>
+  </div>
+
+  <!-- Extras, Markup & VAT -->
+  <div class="card">
+    <div class="card-title">Markup, Mileage, Deposit & VAT</div>
+    <div class="row">
+      <div class="col field">
+        <label>Materials Markup (%)</label>
+        <input type="number" id="markup-pct" value="0" min="0" oninput="calculate()">
+      </div>
+      <div class="col field">
+        <label>Travel Mileage (45p/mi)</label>
+        <input type="number" id="mileage" value="0" min="0" oninput="calculate()">
+      </div>
+    </div>
+    <div class="row">
+      <div class="col field">
+        <label>Deposit Required (%) (Optional)</label>
+        <input type="number" id="deposit-pct" value="0" min="0" max="100" oninput="calculate()">
+      </div>
+      <div class="col field" style="display:flex; align-items:flex-end; padding-bottom:8px;">
+        <div class="toggle-row" style="width:100%;">
+          <label style="margin:0;">Add 20% UK VAT</label>
+          <input type="checkbox" id="vat-toggle" onchange="calculate()">
+        </div>
+      </div>
+    </div>
+
+    <div class="totals-box">
+      <div class="total-line"><span>Subtotal:</span><span id="disp-sub">£0.00</span></div>
+      <div class="total-line" id="row-markup" style="display:none;"><span>Markup:</span><span id="disp-markup">£0.00</span></div>
+      <div class="total-line" id="row-mileage" style="display:none;"><span>Mileage:</span><span id="disp-mileage">£0.00</span></div>
+      <div class="total-line" id="row-vat" style="display:none;"><span>VAT (20%):</span><span id="disp-vat">£0.00</span></div>
+      <div class="total-line grand"><span>TOTAL:</span><span id="disp-total">£0.00</span></div>
+      <div class="total-line" id="row-deposit" style="display:none; color:#b45309; font-weight:700; margin-top:6px;"><span>Deposit Due Upfront:</span><span id="disp-deposit">£0.00</span></div>
+    </div>
+  </div>
+
+  <!-- Notes -->
+  <div class="card">
+    <div class="card-title">Notes & Terms</div>
+    <textarea id="notes" rows="2" placeholder="Quote valid for 30 days. Payment due upon completion."></textarea>
+  </div>
+
+  <!-- Generate & Share Action -->
+  <button class="btn btn-success" id="share-btn" onclick="sharePDFDirect()">📄 Generate & Share PDF (WhatsApp / Email)</button>
+
+  <!-- EDIT PRESETS MODAL -->
+  <div class="modal-backdrop" id="presets-modal">
+    <div class="modal-box">
+      <div class="modal-title">Edit Your Quick Presets</div>
+      <div class="modal-sub">Customise your one-tap items & prices (e.g. Skip Hire, Fence Panels, Callout Fee).</div>
+      <div id="preset-editor-list" style="max-height: 260px; overflow-y: auto; margin-bottom: 10px;"></div>
+      <button class="btn btn-secondary btn-sm" style="margin-bottom: 12px;" onclick="addPresetRowInEditor()">+ Add Another Preset</button>
+      <button class="btn btn-primary" style="margin-bottom: 8px;" onclick="saveEditedPresets()">Save Presets</button>
+      <button class="btn" style="background:transparent; color:var(--muted); font-size:13px;" onclick="closeModal('presets-modal')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- PIN SECURITY MODAL -->
+  <div class="modal-backdrop" id="pin-modal">
+    <div class="modal-box">
+      <div class="modal-title">Device PIN Lock</div>
+      <div class="modal-sub">Set an optional 4-digit PIN so nobody can open QuickQuote on your phone without it.</div>
+      <div class="field">
+        <label>4-Digit PIN (Leave blank to turn off)</label>
+        <input type="password" id="pin-set-input" maxlength="4" inputmode="numeric" placeholder="e.g. 1234">
+      </div>
+      <button class="btn btn-primary" style="margin-bottom: 8px;" onclick="savePinSetting()">Save PIN Setting</button>
+      <button class="btn" style="background:transparent; color:var(--muted); font-size:13px;" onclick="closeModal('pin-modal')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- UPGRADE / PAYPAL SUBSCRIPTION MODAL -->
+  <div class="modal-backdrop" id="upgrade-modal">
+    <div class="modal-box">
+      <div class="modal-title" id="upgrade-title">Unlock Unlimited Quotes</div>
+      <div class="modal-sub" id="upgrade-sub">You get 5 free PDF quotes & invoices to test QuickQuote. Upgrade anytime for unlimited documents:</div>
+      
+      <div class="plan-card selected" id="plan-monthly" onclick="selectPlan('monthly')">
+        <div>
+          <div style="font-weight:700;">Monthly Pass</div>
+          <div style="font-size:12px; color:var(--muted);">Cancel anytime, no lock-in</div>
+        </div>
+        <div class="plan-price">£1.50<span style="font-size:12px; font-weight:400;">/mo</span></div>
+      </div>
+
+      <div class="plan-card" id="plan-yearly" onclick="selectPlan('yearly')">
+        <div>
+          <div style="font-weight:700;">Annual Pass <span class="badge">SAVE 55%</span></div>
+          <div style="font-size:12px; color:var(--muted);">Pay once for a full year</div>
+        </div>
+        <div class="plan-price">£7.99<span style="font-size:12px; font-weight:400;">/yr</span></div>
+      </div>
+
+      <button class="btn btn-accent" style="margin-bottom: 6px;" onclick="proceedToPayPal()">Pay via PayPal / Card</button>
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label>Already Paid? Enter Your Unlock Code:</label>
+        <div class="row">
+          <input type="text" id="unlock-code-input" placeholder="e.g. QQPRO2026" style="text-transform:uppercase;">
+          <button class="btn btn-primary" style="width:auto; padding:0 16px;" onclick="verifyUnlockCode()">Unlock</button>
+        </div>
+      </div>
+
+      <button class="btn" style="background:transparent; color:var(--muted); font-size:13px; margin-top:6px;" onclick="closeModal('upgrade-modal')">Close</button>
+    </div>
+  </div>
+
+  <!-- HIDDEN PDF TEMPLATE -->
+  <div id="print-area">
+    <div class="p-header">
+      <div>
+        <div class="p-title" id="p-doc-type">QUOTE</div>
+        <div style="font-size:13px; margin-top:4px;">Ref: <strong id="p-doc-num"></strong> | Date: <span id="p-doc-date"></span></div>
+      </div>
+      <div class="p-biz">
+        <strong style="font-size:16px;" id="p-biz-name"></strong><br>
+        <span id="p-biz-address"></span><br>
+        <span id="p-biz-contact"></span><br>
+        <span id="p-biz-vat"></span>
+      </div>
+    </div>
+
+    <div class="p-meta">
+      <div>
+        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Prepared For:</strong><br>
+        <strong style="font-size:15px;" id="p-client-name"></strong><br>
+        <span id="p-client-address"></span>
+      </div>
+    </div>
+
+    <table class="p-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th style="width:60px;">Qty</th>
+          <th style="width:90px;">Unit Price</th>
+          <th style="width:90px; text-align:right;">Total</th>
+        </tr>
+      </thead>
+      <tbody id="p-items-body"></tbody>
+    </table>
+
+    <table class="p-totals">
+      <tr><td>Subtotal:</td><td style="text-align:right;" id="p-sub"></td></tr>
+      <tr id="p-row-markup"><td>Materials Markup:</td><td style="text-align:right;" id="p-markup"></td></tr>
+      <tr id="p-row-mileage"><td>Travel Mileage:</td><td style="text-align:right;" id="p-mileage"></td></tr>
+      <tr id="p-row-vat"><td>VAT (20%):</td><td style="text-align:right;" id="p-vat"></td></tr>
+      <tr class="p-grand"><td>TOTAL:</td><td style="text-align:right;" id="p-total"></td></tr>
+      <tr id="p-row-deposit" style="color:#b45309; font-weight:bold;"><td>Deposit Required:</td><td style="text-align:right;" id="p-deposit"></td></tr>
+    </table>
+
+    <div class="p-footer">
+      <div id="p-notes" style="margin-bottom:8px;"></div>
+      <div id="p-bank-box" style="font-weight:bold; color:#1e293b;">Bank Transfer Details: <span id="p-biz-bank"></span></div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // YOUR CONFIGURATION (EDIT THESE 3 LINES)
+    // ==========================================
+    const FREE_QUOTE_LIMIT = 5;
+    const VALID_UNLOCK_CODES = ['QQPRO2026', 'QUICKPRO', 'TRADE2026']; // Give one of these codes on your PayPal thank-you page/receipt
+    const PAYPAL_MONTHLY_URL = ''; // Paste your PayPal £1.50/mo subscription link here
+    const PAYPAL_YEARLY_URL  = ''; // Paste your PayPal £7.99/yr subscription link here
+    // ==========================================
+
+    const DEFAULT_PRESETS = [
+      { label: 'Fence Bay', desc: '6ft Fence Panel + Post + Gravel Board', price: 65 },
+      { label: 'Postcrete Bag', desc: 'Postcrete Bag', price: 8 },
+      { label: 'Half Day Van', desc: 'Luton Van + 2 Men (Half Day)', price: 220 },
+      { label: 'Full Day Van', desc: 'Luton Van + 2 Men (Full Day)', price: 400 },
+      { label: 'Skip / Tip Fee', desc: 'Waste Disposal / Skip Fee', price: 95 }
+    ];
+
+    let docType = 'QUOTE';
+    let items = [{ desc: '', qty: 1, price: '' }];
+    let selectedPlan = 'monthly';
+    let presets = [];
+
+    // Startup Checks
+    checkPinOnLoad();
+    document.getElementById('doc-date').valueAsDate = new Date();
+    loadPresets();
+    loadProfile();
+    loadDocCounter();
+    updateUsageBanner();
+    renderItems();
+
+    // PIN Lock Logic
+    function checkPinOnLoad() {
+      const savedPin = localStorage.getItem('qq_app_pin');
+      if (savedPin && savedPin.length === 4) {
+        document.getElementById('pin-screen').style.display = 'flex';
+      }
+    }
+
+    function checkPinUnlock() {
+      const entered = document.getElementById('pin-unlock-input').value.trim();
+      const savedPin = localStorage.getItem('qq_app_pin');
+      if (entered === savedPin) {
+        document.getElementById('pin-screen').style.display = 'none';
+        document.getElementById('pin-unlock-input').value = '';
+      } else {
+        alert('Incorrect PIN. Please try again.');
+      }
+    }
+
+    function openPinModal() {
+      document.getElementById('pin-set-input').value = localStorage.getItem('qq_app_pin') || '';
+      openModal('pin-modal');
+    }
+
+    function savePinSetting() {
+      const val = document.getElementById('pin-set-input').value.trim();
+      if (val && !/^\d{4}$/.test(val)) {
+        return alert('PIN must be exactly 4 numbers (or leave blank to disable).');
+      }
+      if (val) {
+        localStorage.setItem('qq_app_pin', val);
+        alert('4-digit PIN lock enabled!');
+      } else {
+        localStorage.removeItem('qq_app_pin');
+        alert('PIN lock disabled.');
+      }
+      closeModal('pin-modal');
+    }
+
+    // Usage Limit & PayPal Unlock Logic
+    function getQuotesUsed() {
+      return parseInt(localStorage.getItem('qq_quotes_used') || '0', 10);
+    }
+
+    function updateUsageBanner() {
+      const isPro = localStorage.getItem('qq_is_pro') === 'true';
+      const banner = document.getElementById('usage-banner');
+      const badge = document.getElementById('plan-badge');
+      const upgradeNavBtn = document.getElementById('upgrade-nav-btn');
+
+      if (isPro) {
+        badge.innerText = 'PRO';
+        banner.style.display = 'none';
+        upgradeNavBtn.style.display = 'none';
+        return;
+      }
+
+      const used = getQuotesUsed();
+      const left = Math.max(0, FREE_QUOTE_LIMIT - used);
+      
+      banner.classList.remove('low', 'limit');
+      if (left === 0) {
+        badge.innerText = 'LIMIT REACHED';
+        banner.classList.add('limit');
+        document.getElementById('usage-text').innerText = '5 Free PDFs used — Upgrade for unlimited';
+        document.getElementById('usage-count').innerText = '0 of 5 left';
+      } else if (left <= 2) {
+        banner.classList.add('low');
+        document.getElementById('usage-text').innerText = 'Running low on free PDFs';
+        document.getElementById('usage-count').innerText = `${left} of ${FREE_QUOTE_LIMIT} left`;
+      } else {
+        document.getElementById('usage-text').innerText = 'Free Trial: 5 PDF quotes/invoices included';
+        document.getElementById('usage-count').innerText = `${left} of ${FREE_QUOTE_LIMIT} left`;
+      }
+    }
+
+    function canGeneratePDF() {
+      if (localStorage.getItem('qq_is_pro') === 'true') return true;
+
+      if (getQuotesUsed() >= FREE_QUOTE_LIMIT) {
+        document.getElementById('upgrade-title').innerText = 'You Have Used All 5 Free PDFs';
+        document.getElementById('upgrade-sub').innerText = 'Upgrade to QuickQuote Pro (£1.50/month or £7.99/year) to send unlimited quotes & invoices.';
+        openModal('upgrade-modal');
+        return false;
+      }
+      return true;
+    }
+
+    function selectPlan(plan) {
+      selectedPlan = plan;
+      document.getElementById('plan-monthly').classList.toggle('selected', plan === 'monthly');
+      document.getElementById('plan-yearly').classList.toggle('selected', plan === 'yearly');
+    }
+
+    function proceedToPayPal() {
+      const targetUrl = selectedPlan === 'monthly' ? PAYPAL_MONTHLY_URL : PAYPAL_YEARLY_URL;
+      if (targetUrl && targetUrl.startsWith('http')) {
+        window.open(targetUrl, '_blank');
+      } else {
+        const priceText = selectedPlan === 'monthly' ? '£1.50/month' : '£7.99/year';
+        alert(`PayPal Link Not Set Yet (${priceText}). Paste your PayPal Subscription link into PAYPAL_MONTHLY_URL / PAYPAL_YEARLY_URL at the top of the script.`);
+      }
+    }
+
+    function verifyUnlockCode() {
+      const code = document.getElementById('unlock-code-input').value.trim().toUpperCase();
+      if (!code) return alert('Please enter your unlock code.');
+
+      if (VALID_UNLOCK_CODES.includes(code)) {
+        localStorage.setItem('qq_is_pro', 'true');
+        updateUsageBanner();
+        closeModal('upgrade-modal');
+        alert('QuickQuote Pro Unlocked! You now have unlimited quotes & invoices.');
+      } else {
+        alert('Invalid unlock code. Please check your PayPal confirmation receipt and try again.');
+      }
+    }
+
+    // Document Type & Auto-Incrementing Numbers
+    function loadDocCounter() {
+      const nextNum = localStorage.getItem('qq_doc_counter') || '1001';
+      document.getElementById('doc-num').value = (docType === 'QUOTE' ? 'QT-' : 'INV-') + nextNum;
+    }
+
+    function incrementDocCounter() {
+      const currentVal = document.getElementById('doc-num').value;
+      const match = currentVal.match(/(\d+)$/);
+      if (match) {
+        const nextNum = parseInt(match[1], 10) + 1;
+        localStorage.setItem('qq_doc_counter', nextNum.toString());
+        document.getElementById('doc-num').value = currentVal.replace(/\d+$/, nextNum.toString());
+      }
+    }
+
+    function setDocType(type) {
+      docType = type;
+      document.getElementById('btn-quote').classList.toggle('active', type === 'QUOTE');
+      document.getElementById('btn-invoice').classList.toggle('active', type === 'INVOICE');
+      const numInput = document.getElementById('doc-num');
+      if (type === 'INVOICE' && numInput.value.startsWith('QT-')) {
+        numInput.value = numInput.value.replace('QT-', 'INV-');
+      } else if (type === 'QUOTE' && numInput.value.startsWith('INV-')) {
+        numInput.value = numInput.value.replace('INV-', 'QT-');
+      }
+    }
+
+    function resetCurrentDoc() {
+      if (!confirm('Clear customer details and line items for a new quote?')) return;
+      document.getElementById('client-name').value = '';
+      document.getElementById('client-address').value = '';
+      document.getElementById('markup-pct').value = '0';
+      document.getElementById('mileage').value = '0';
+      document.getElementById('deposit-pct').value = '0';
+      document.getElementById('notes').value = '';
+      document.getElementById('doc-date').valueAsDate = new Date();
+      items = [{ desc: '', qty: 1, price: '' }];
+      renderItems();
+    }
+
+    // Profile Saving
+    function saveProfile() {
+      const profile = {
+        name: document.getElementById('biz-name').value,
+        contact: document.getElementById('biz-contact').value,
+        address: document.getElementById('biz-address').value,
+        bank: document.getElementById('biz-bank').value,
+        vat: document.getElementById('biz-vat').value
+      };
+      localStorage.setItem('qq_uk_profile', JSON.stringify(profile));
+      alert('Business details saved to this device!');
+    }
+
+    function loadProfile() {
+      const saved = localStorage.getItem('qq_uk_profile');
+      if (saved) {
+        const p = JSON.parse(saved);
+        document.getElementById('biz-name').value = p.name || '';
+        document.getElementById('biz-contact').value = p.contact || '';
+        document.getElementById('biz-address').value = p.address || '';
+        document.getElementById('biz-bank').value = p.bank || '';
+        document.getElementById('biz-vat').value = p.vat || '';
+      }
+    }
+
+    // Editable Quick Presets
+    function loadPresets() {
+      const saved = localStorage.getItem('qq_custom_presets');
+      presets = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_PRESETS));
+      renderPresetChips();
+    }
+
+    function renderPresetChips() {
+      const container = document.getElementById('preset-chips-container');
+      container.innerHTML = '';
+      presets.forEach((p, idx) => {
+        const span = document.createElement('span');
+        span.className = 'chip';
+        span.innerText = `+ ${p.label} (£${p.price})`;
+        span.onclick = () => addPreset(p.desc || p.label, p.price);
+        container.appendChild(span);
+      });
+    }
+
+    function openPresetEditor() {
+      const list = document.getElementById('preset-editor-list');
+      list.innerHTML = '';
+      presets.forEach((p, idx) => {
+        list.appendChild(createPresetEditorRow(p.label, p.desc, p.price));
+      });
+      openModal('presets-modal');
+    }
+
+    function createPresetEditorRow(label = '', desc = '', price = '') {
+      const row = document.createElement('div');
+      row.className = 'preset-edit-row';
+      row.innerHTML = `
+        <input type="text" class="pe-label" placeholder="Button Name" value="${escapeAttr(label)}" style="flex:1.2; padding:8px; font-size:13px;">
+        <input type="text" class="pe-desc" placeholder="Invoice Line Text" value="${escapeAttr(desc)}" style="flex:1.8; padding:8px; font-size:13px;">
+        <input type="number" class="pe-price" placeholder="£" value="${price}" style="width:70px; padding:8px; font-size:13px;">
+        <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">X</button>
+      `;
+      return row;
+    }
+
+    function addPresetRowInEditor() {
+      document.getElementById('preset-editor-list').appendChild(createPresetEditorRow());
+    }
+
+    function saveEditedPresets() {
+      const rows = document.querySelectorAll('#preset-editor-list .preset-edit-row');
+      const updated = [];
+      rows.forEach(r => {
+        const label = r.querySelector('.pe-label').value.trim();
+        const desc = r.querySelector('.pe-desc').value.trim() || label;
+        const price = parseFloat(r.querySelector('.pe-price').value) || 0;
+        if (label) updated.push({ label, desc, price });
+      });
+      presets = updated;
+      localStorage.setItem('qq_custom_presets', JSON.stringify(presets));
+      renderPresetChips();
+      closeModal('presets-modal');
+    }
+
+    // Line Items & HTML Escaping
+    function escapeAttr(str) {
+      return String(str || '').replace(/"/g, '&quot;');
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function addItem(desc = '', qty = 1, price = '') {
+      items.push({ desc, qty, price });
+      renderItems();
+    }
+
+    function addPreset(desc, price) {
+      if (items.length === 1 && !items[0].desc && !items[0].price) {
+        items[0] = { desc, qty: 1, price };
+      } else {
+        items.push({ desc, qty: 1, price });
+      }
+      renderItems();
+    }
+
+    function removeItem(index) {
+      items.splice(index, 1);
+      renderItems();
+    }
+
+    function updateItem(index, field, value) {
+      items[index][field] = value;
+      calculate();
+    }
+
+    function renderItems() {
+      const container = document.getElementById('items-container');
+      container.innerHTML = '';
+      items.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'item-row';
+        div.innerHTML = `
+          ${items.length > 1 ? `<button class="remove-btn" onclick="removeItem(${index})">Remove</button>` : ''}
+          <div class="field">
+            <label>Description</label>
+            <input type="text" placeholder="e.g. Supply & fit featherboard panel" value="${escapeAttr(item.desc)}" oninput="updateItem(${index}, 'desc', this.value)">
+          </div>
+          <div class="row">
+            <div class="col">
+              <label>Qty</label>
+              <input type="number" value="${item.qty}" min="1" oninput="updateItem(${index}, 'qty', this.value)">
+            </div>
+            <div class="col">
+              <label>Price (£)</label>
+              <input type="number" placeholder="0.00" step="0.01" value="${item.price}" oninput="updateItem(${index}, 'price', this.value)">
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+      calculate();
+    }
+
+    function formatGBP(num) {
+      return '£' + num.toFixed(2);
+    }
+
+    function calculate() {
+      let sub = 0;
+      items.forEach(item => {
+        const q = parseFloat(item.qty) || 0;
+        const p = parseFloat(item.price) || 0;
+        sub += q * p;
+      });
+
+      const markupPct = parseFloat(document.getElementById('markup-pct').value) || 0;
+      const markupVal = sub * (markupPct / 100);
+
+      const miles = parseFloat(document.getElementById('mileage').value) || 0;
+      const mileageVal = miles * 0.45;
+
+      const preVat = sub + markupVal + mileageVal;
+      const hasVat = document.getElementById('vat-toggle').checked;
+      const vatVal = hasVat ? preVat * 0.20 : 0;
+      const grandTotal = preVat + vatVal;
+
+      const depositPct = parseFloat(document.getElementById('deposit-pct').value) || 0;
+      const depositVal = grandTotal * (depositPct / 100);
+
+      document.getElementById('disp-sub').innerText = formatGBP(sub);
+      
+      document.getElementById('row-markup').style.display = markupVal > 0 ? 'flex' : 'none';
+      document.getElementById('disp-markup').innerText = formatGBP(markupVal);
+
+      document.getElementById('row-mileage').style.display = mileageVal > 0 ? 'flex' : 'none';
+      document.getElementById('disp-mileage').innerText = formatGBP(mileageVal);
+
+      document.getElementById('row-vat').style.display = hasVat ? 'flex' : 'none';
+      document.getElementById('disp-vat').innerText = formatGBP(vatVal);
+
+      document.getElementById('disp-total').innerText = formatGBP(grandTotal);
+
+      document.getElementById('row-deposit').style.display = depositVal > 0 ? 'flex' : 'none';
+      document.getElementById('disp-deposit').innerText = formatGBP(depositVal);
+
+      return { sub, markupVal, mileageVal, vatVal, grandTotal, hasVat, depositVal, depositPct };
+    }
+
+    // Voice Recognition
+    function startVoiceQuote() {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) return alert('Voice input is not supported on this browser.');
+
+      const status = document.getElementById('voice-status');
+      const recognition = new SpeechRec();
+      recognition.lang = 'en-GB';
+      status.style.display = 'block';
+      status.innerText = 'Listening... Speak item and price (e.g. "Two fence panels 120 pounds")';
+
+      recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        status.innerText = `Heard: "${text}"`;
+        parseVoiceItems(text);
+      };
+
+      recognition.onerror = () => status.innerText = 'Voice error. Please try again.';
+      recognition.start();
+    }
+
+    function parseVoiceItems(text) {
+      const wordsToNums = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+      const parts = text.split(/, and | and |,/i);
+
+      parts.forEach(part => {
+        let clean = part.trim();
+        if (!clean || clean.length < 3) return;
+
+        let qty = 1;
+        const numMatch = clean.match(/^(\d+|one|two|three|four|five|six|seven|eight|nine|ten)/i);
+        if (numMatch) {
+          const val = numMatch[1].toLowerCase();
+          qty = wordsToNums[val] || parseInt(val, 10);
+          clean = clean.replace(numMatch[0], '').trim();
+        }
+
+        let price = '';
+        const priceMatch = clean.match(/(\d+(?:\.\d{1,2})?)\s*(?:pounds|quid|£)?$/i);
+        if (priceMatch) {
+          price = parseFloat(priceMatch[1]);
+          clean = clean.replace(priceMatch[0], '').trim();
+        }
+
+        clean = clean.charAt(0).toUpperCase() + clean.slice(1);
+        if (items.length === 1 && !items[0].desc && !items[0].price) {
+          items[0] = { desc: clean, qty: qty, price: price };
+        } else {
+          items.push({ desc: clean, qty: qty, price: price });
+        }
+      });
+      renderItems();
+    }
+
+    // Modal Helpers
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    // PDF Generation & Native Share
+    async function sharePDFDirect() {
+      if (!canGeneratePDF()) return;
+
+      const totals = calculate();
+      document.getElementById('p-biz-name').innerText = document.getElementById('biz-name').value || 'Your Business Name';
+      document.getElementById('p-biz-address').innerText = document.getElementById('biz-address').value;
+      document.getElementById('p-biz-contact').innerText = document.getElementById('biz-contact').value;
+      const vatNum = document.getElementById('biz-vat').value;
+      document.getElementById('p-biz-vat').innerText = vatNum ? 'VAT Reg: ' + vatNum : '';
+      document.getElementById('p-doc-type').innerText = docType;
+      document.getElementById('p-doc-num').innerText = document.getElementById('doc-num').value;
+      document.getElementById('p-doc-date').innerText = document.getElementById('doc-date').value;
+      document.getElementById('p-client-name').innerText = document.getElementById('client-name').value || 'Valued Customer';
+      document.getElementById('p-client-address').innerText = document.getElementById('client-address').value;
+
+      const tbody = document.getElementById('p-items-body');
+      tbody.innerHTML = '';
+      items.forEach(item => {
+        if (item.desc || item.price) {
+          const q = parseFloat(item.qty) || 0;
+          const p = parseFloat(item.price) || 0;
+          tbody.innerHTML += `<tr>
+            <td>${escapeHtml(item.desc) || 'Labour / Materials'}</td>
+            <td>${q}</td>
+            <td>${formatGBP(p)}</td>
+            <td style="text-align:right;">${formatGBP(q * p)}</td>
+          </tr>`;
+        }
+      });
+
+      document.getElementById('p-sub').innerText = formatGBP(totals.sub);
+      document.getElementById('p-row-markup').style.display = totals.markupVal > 0 ? 'table-row' : 'none';
+      document.getElementById('p-markup').innerText = formatGBP(totals.markupVal);
+      document.getElementById('p-row-mileage').style.display = totals.mileageVal > 0 ? 'table-row' : 'none';
+      document.getElementById('p-mileage').innerText = formatGBP(totals.mileageVal);
+      document.getElementById('p-row-vat').style.display = totals.hasVat ? 'table-row' : 'none';
+      document.getElementById('p-vat').innerText = formatGBP(totals.vatVal);
+      document.getElementById('p-total').innerText = formatGBP(totals.grandTotal);
+
+      document.getElementById('p-row-deposit').style.display = totals.depositVal > 0 ? 'table-row' : 'none';
+      document.getElementById('p-deposit').innerText = `${formatGBP(totals.depositVal)} (${totals.depositPct}%)`;
+
+      document.getElementById('p-notes').innerText = document.getElementById('notes').value;
+
+      const bankDetails = document.getElementById('biz-bank').value;
+      document.getElementById('p-bank-box').style.display = (docType === 'INVOICE' && bankDetails) ? 'block' : 'none';
+      document.getElementById('p-biz-bank').innerText = bankDetails;
+
+      const printEl = document.getElementById('print-area');
+      printEl.style.display = 'block';
+      const fileName = `${document.getElementById('doc-num').value}.pdf`;
+
+      const pdfBlob = await html2pdf().set({
+        margin: 10, filename: fileName, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(printEl).outputPdf('blob');
+
+      printEl.style.display = 'none';
+
+      // Count 1 free quote used & bump document number for next time
+      if (localStorage.getItem('qq_is_pro') !== 'true') {
+        localStorage.setItem('qq_quotes_used', (getQuotesUsed() + 1).toString());
+        updateUsageBanner();
+      }
+      incrementDocCounter();
+
+      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: fileName });
+      } else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(pdfBlob);
+        a.download = fileName;
+        a.click();
+      }
+    }
+  </script>
+</body>
+</html>
